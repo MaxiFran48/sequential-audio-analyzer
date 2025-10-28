@@ -1,4 +1,4 @@
-CC = mpicc
+CC = gcc
 CFLAGS = -Wall -O2 -std=c89 -I./include
 LDFLAGS = -lm
 
@@ -8,7 +8,7 @@ BIN_DIR = .
 
 # Source files
 SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/wav.c $(SRC_DIR)/window.c $(SRC_DIR)/fft.c \
-          $(SRC_DIR)/bpm.c $(SRC_DIR)/stft.c $(SRC_DIR)/mpi_utils.c
+          $(SRC_DIR)/bpm.c $(SRC_DIR)/stft.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)

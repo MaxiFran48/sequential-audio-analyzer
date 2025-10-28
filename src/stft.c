@@ -6,36 +6,26 @@
 #include "window.h"
 #include "fft.h"
 
-int calculate_local_frames(int rank, int n_frames, int procs_number) {
-    int local_frames = 0;
-    int i;
-    for (i = rank; i < n_frames; i += procs_number) {
-        local_frames++;
-    }
-    return local_frames;
-}
-
-float* compute_stft_local(float* samples, int n_samples, int rank, int procs_number, 
-                          int n_frames, int n_bins, int local_frames) {
+float* compute_stft(float* samples, int n_frames, int n_bins) {
     
-    float *mag_local;
-    int idx_local;
+    float* mag;
     int i, k;
     
-    mag_local = malloc(local_frames * n_bins * sizeof(float));
+    mag = malloc(n_frames * n_bins * sizeof(float));
     
-    if (!mag_local) {
+    if (!mag) {
         return NULL;
     }
 
-    idx_local = 0;
-    for (i = rank; i < n_frames; i += procs_number) {
-        float frame[DEFAULT_N];
+    for (i = 0; i < n_frames; i++) {
         float real[DEFAULT_N];
         float imaginary[DEFAULT_N];
         float r, imv;
-        
-        /* Extraer ventana */
+        float* frame;
+
+        frame = malloc(DEFAULT_N * sizeof(float));
+
+        /* Extraer ventana actual */
         memcpy(frame, samples + i * DEFAULT_HOP, sizeof(float) * DEFAULT_N);
         
         /* Aplicar ventana de Hann */
@@ -54,11 +44,9 @@ float* compute_stft_local(float* samples, int n_samples, int rank, int procs_num
         for (k = 0; k < n_bins; k++) {
             r = real[k];
             imv = imaginary[k];
-            mag_local[idx_local * n_bins + k] = (float)sqrt(r * r + imv * imv);
+            mag[i * n_bins + k] = (float)sqrt(r * r + imv * imv);
         }
-        
-        idx_local++;
     }
 
-    return mag_local;
+    return mag;
 }
