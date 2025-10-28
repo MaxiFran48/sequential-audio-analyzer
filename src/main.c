@@ -5,6 +5,7 @@
 #include "common.h"
 #include "stft.h"
 #include "bpm.h"
+#include "sys/time.h"
 
 
 int main (int argc, char* argv[]) {
@@ -19,6 +20,9 @@ int main (int argc, char* argv[]) {
     char files[MAX_FILES][MAX_PATH];
     int audio_index = 0;
     int files_count;
+
+    struct timeval t0, t1;
+    gettimeofday(&t0, NULL);
 
     /* Cargamos el archivo con la lista de audios */
     files_count = load_wav_list(wav_list_path, files);
@@ -109,11 +113,15 @@ int main (int argc, char* argv[]) {
     analysis_results = analyze_features_and_bpm(mag, n_frames, n_bins, wav_file.samplerate);
     write_results_to_csv("results/analysis_results.csv", analysis_results, wav_file.samplerate);
 
+    gettimeofday(&t1, NULL);
+
     /* Liberar memoria */
     free(analysis_results);
     free(mag);
     wav_free(&wav_file);
     free(samples);
+
+    printf("\nTiempo total de ejecucion: %.2f segundos\n", (t1.tv_sec - t0.tv_sec) + (t1.tv_usec - t0.tv_usec) / 1e6);
 
     return 0;
 }
