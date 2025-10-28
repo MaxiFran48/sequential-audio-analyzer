@@ -1,36 +1,28 @@
-# Parallel Audio Analyzer
+# Sequential Audio Analyzer
 
-Analizador de audio paralelo con MPI que calcula espectrogramas mediante STFT (Short-Time Fourier Transform) y detecta el BPM (tempo) de archivos de audio WAV.
+Analizador de audio secuencial que calcula espectrogramas mediante STFT (Short-Time Fourier Transform) y detecta el BPM (tempo) de archivos de audio WAV.
 
 ## Características
 
-- **Procesamiento paralelo**: Distribución cíclica de frames entre procesos MPI
-- **STFT**: Análisis espectral con ventanas Hann (N=2048, hop=512)
-- **FFT**: Implementación Cooley-Tukey in-place
-- **Detección de BPM**: Algoritmo basado en spectral flux y autocorrelación (rango 60-180 BPM)
-- **Exportación CSV**: Espectrograma completo y resultados de análisis
-- **Estándar C89**: Código compatible con ANSI C (C89/C90)
+- Procesamiento secuencial: todo el análisis se realiza en un solo proceso
+- STFT: Análisis espectral con ventanas Hann (configurable)
+- FFT: Implementación Cooley-Tukey in-place
+- Detección de BPM: Algoritmo basado en spectral flux y autocorrelación (rango 60-180 BPM)
+- Exportación CSV: Espectrograma completo y resultados de análisis
+- Estándar C89: Código compatible con ANSI C (C89/C90)
 
 ## Estructura del Proyecto
 
 ```
 .
 ├── src/
-│   ├── main.c          # Orquestación MPI y flujo principal
+│   ├── main.c          # Orquestación y flujo principal (secuencial)
 │   ├── stft.c          # Cálculo de STFT (Short-Time Fourier Transform)
-│   ├── mpi_utils.c     # Recolección y reordenamiento MPI
 │   ├── wav.c           # Lectura de archivos WAV
 │   ├── fft.c           # Transformada rápida de Fourier
 │   ├── bpm.c           # Detección de tempo
 │   └── window.c        # Funciones de ventaneo
-├── include/
-│   ├── stft.h
-│   ├── mpi_utils.h
-│   ├── wav.h
-│   ├── fft.h
-│   ├── bpm.h
-│   ├── window.h
-│   └── common.h
+├── include/            # Cabeceras públicas
 ├── data/               # Archivos de audio WAV
 ├── results/            # Salida: CSVs del espectrograma y análisis
 └── tests/              # Tests unitarios
@@ -47,21 +39,21 @@ El proyecto usa el estándar C89 (ANSI C) para máxima compatibilidad.
 
 O manualmente:
 ```bash
-mpicc -std=c89 -o main src/*.c -lm -I./include
+gcc -std=c89 -O2 -o main src/*.c -lm -I./include
 ```
 
 ## Uso
 
-```bash
-mpirun -np <num_procesos> ./main
-```
+El ejecutable corre de forma secuencial. Al ejecutarlo, mostrará una lista de archivos WAV disponibles y solicitará la selección de uno para analizar.
 
-El programa mostrará una lista de archivos WAV disponibles y solicitará la selección de uno para analizar.
+```bash
+./main
+```
 
 ### Ejemplo
 
 ```bash
-mpirun -np 4 ./main
+./main
 ```
 
 ## Salida
@@ -71,49 +63,42 @@ mpirun -np 4 ./main
 
 ## Arquitectura
 
-### Módulos
+### Módulos principales
 
 1. **main.c**: Coordinación general del flujo
    - Selección de archivo de audio
-   - Broadcast de datos
+   - Lectura completa del WAV
+   - Cálculo del STFT y detección de BPM
    - Escritura de resultados
 
 2. **stft.c**: Cálculo del espectrograma
-   - `calculate_local_frames()`: Determina carga de trabajo por proceso
-   - `compute_stft_local()`: Procesa frames asignados (ventaneo + FFT)
+   - Ventaneo (Hann u otra ventana configurable)
+   - Invocación de FFT por frame
 
-3. **mpi_utils.c**: Comunicación MPI
-   - `gather_and_reorder_spectrogram()`: Recolecta y reordena de distribución cíclica a secuencial
-
-4. **bpm.c**: Análisis musical
+3. **bpm.c**: Análisis musical
    - `calculate_spectral_flux()`: Detecta cambios espectrales
    - `calculate_autocorrelation()`: Encuentra periodicidad
    - `find_bpm_from_acf()`: Convierte lag a BPM
 
-### Distribución de Trabajo
-
-- **Cíclica**: Proceso `p` analiza frames `p, p+P, p+2P, ...` donde `P` es el total de procesos
-- **Reordenamiento**: MPI_Gatherv recolecta bloques y se reordenan a secuencia temporal
-
 ## Dependencias
 
-- OpenMPI (o cualquier implementación MPI)
 - Biblioteca matemática estándar (`-lm`)
+- Compilador C compatible con C89 (gcc, clang)
 
 ## Tests
 
 ```bash
-# Test de BPM con señal sintética
+# Compilar y ejecutar tests unitarios (ejemplo: test_bpm)
 gcc tests/test_bpm.c src/bpm.c src/fft.c -o test_bpm -lm -I./include
 ./test_bpm
 ```
 
 ## Validación
 
-El algoritmo de BPM fue validado con señales sintéticas:
-- 60 BPM → detectado 60.80 (error 1.33%)
-- 120 BPM → detectado 120.19 (error 0.15%)
-- 180 BPM → detectado 178.21 (error 0.99%)
+El algoritmo de BPM fue validado con señales sintéticas (ejemplos):
+- 60 BPM → detectado ~60.8
+- 120 BPM → detectado ~120.2
+- 180 BPM → detectado ~178.2
 
 ## Licencia
 
