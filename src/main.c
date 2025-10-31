@@ -21,8 +21,8 @@ int main (int argc, char* argv[]) {
     int audio_index = 0;
     int files_count;
 
-    struct timeval t0, t1, t2, t3;
-    gettimeofday(&t0, NULL);
+    struct timeval t_start, t_end, t_start_input, t_end_input, t_start_write_spec, t_end_write_spec;
+    gettimeofday(&t_start, NULL);
 
     /* Cargamos el archivo con la lista de audios */
     files_count = load_wav_list(wav_list_path, files);
@@ -43,6 +43,8 @@ int main (int argc, char* argv[]) {
         printf("%d. %s\n", i+1, files[i]);
     }
 
+    gettimeofday(&t_start_input, NULL);
+
     printf("\nPor favor, ingrese el numero de audio para analizar:\n");
     scanf("%d", &audio_index);
 
@@ -51,7 +53,8 @@ int main (int argc, char* argv[]) {
         scanf("%d", &audio_index);
     }
 
-    
+    gettimeofday(&t_end_input, NULL);
+
     char* audio_path = files[audio_index-1];
 
     if (wav_read(audio_path, &wav_file) == -1){
@@ -91,7 +94,7 @@ int main (int argc, char* argv[]) {
     
     printf("\nEspectrograma global recibido (%d ventanas x %d bins)\n", n_frames, n_bins);
 
-    gettimeofday(&t1, NULL);
+    gettimeofday(&t_start_write_spec, NULL);
 
     f = fopen("results/spectrogram.csv", "w");
     if (!f) {
@@ -118,7 +121,7 @@ int main (int argc, char* argv[]) {
     analysis_results = analyze_features_and_bpm(mag, n_frames, n_bins, wav_file.samplerate);
     write_results_to_csv("results/analysis_results.csv", analysis_results, wav_file.samplerate);
 
-    gettimeofday(&t3, NULL);
+    gettimeofday(&t_end_write_spec, NULL);
 
     /* Liberar memoria */
     free(analysis_results);
@@ -126,7 +129,7 @@ int main (int argc, char* argv[]) {
     wav_free(&wav_file);
     free(samples);
 
-    printf("\nTiempo total de ejecucion: %.2f segundos\n", (t3.tv_sec - t0.tv_sec) + (t3.tv_usec - t0.tv_usec) / 1e6 - (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1e6);
+    printf("\nTiempo total de ejecucion: %.2f segundos\n", (t_start.tv_sec - t_end_input.tv_sec) + (t_start.tv_usec - t_end_input.tv_usec) / 1e6 - ((t_start_write_spec.tv_sec - t_end_write_spec.tv_sec) + (t_start_write_spec.tv_usec - t_end_write_spec.tv_usec) / 1e6) - ((t_start_input.tv_sec - t_end_input.tv_sec) + (t_start_input.tv_usec - t_end_input.tv_usec) / 1e6));
 
     return 0;
 }
