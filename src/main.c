@@ -113,7 +113,7 @@ int main (int argc, char* argv[]) {
 
     fclose(f);
 
-    gettimeofday(&t2, NULL);
+    gettimeofday(&t_end_write_spec, NULL);
 
     printf("\nArchivo CSV guardado en results/spectrogram.csv\n");
     
@@ -121,7 +121,7 @@ int main (int argc, char* argv[]) {
     analysis_results = analyze_features_and_bpm(mag, n_frames, n_bins, wav_file.samplerate);
     write_results_to_csv("results/analysis_results.csv", analysis_results, wav_file.samplerate);
 
-    gettimeofday(&t_end_write_spec, NULL);
+    gettimeofday(&t_end, NULL);
 
     /* Liberar memoria */
     free(analysis_results);
