@@ -21,7 +21,7 @@ int main (int argc, char* argv[]) {
     int audio_index = 0;
     int files_count;
 
-    struct timeval t0, t1;
+    struct timeval t0, t1, t2, t3;
     gettimeofday(&t0, NULL);
 
     /* Cargamos el archivo con la lista de audios */
@@ -91,6 +91,8 @@ int main (int argc, char* argv[]) {
     
     printf("\nEspectrograma global recibido (%d ventanas x %d bins)\n", n_frames, n_bins);
 
+    gettimeofday(&t1, NULL);
+
     f = fopen("results/spectrogram.csv", "w");
     if (!f) {
         perror("No se pudo crear el archivo CSV");
@@ -107,13 +109,16 @@ int main (int argc, char* argv[]) {
     }
 
     fclose(f);
+
+    gettimeofday(&t2, NULL);
+
     printf("\nArchivo CSV guardado en results/spectrogram.csv\n");
     
     /* Calcular BPM y características */
     analysis_results = analyze_features_and_bpm(mag, n_frames, n_bins, wav_file.samplerate);
     write_results_to_csv("results/analysis_results.csv", analysis_results, wav_file.samplerate);
 
-    gettimeofday(&t1, NULL);
+    gettimeofday(&t3, NULL);
 
     /* Liberar memoria */
     free(analysis_results);
@@ -121,7 +126,7 @@ int main (int argc, char* argv[]) {
     wav_free(&wav_file);
     free(samples);
 
-    printf("\nTiempo total de ejecucion: %.2f segundos\n", (t1.tv_sec - t0.tv_sec) + (t1.tv_usec - t0.tv_usec) / 1e6);
+    printf("\nTiempo total de ejecucion: %.2f segundos\n", (t3.tv_sec - t0.tv_sec) + (t3.tv_usec - t0.tv_usec) / 1e6 - (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1e6);
 
     return 0;
 }
