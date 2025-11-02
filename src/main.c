@@ -21,7 +21,9 @@ int main (int argc, char* argv[]) {
     int audio_index = 0;
     int files_count;
 
-    struct timeval t_start, t_end, t_start_input, t_end_input, t_start_write_spec, t_end_write_spec;
+    struct timeval t_start, t_end, t_start_compute_stft, t_end_compute_stft, t_start_input, t_end_input, t_start_write_spec, t_end_write_spec;   
+    double t_total, t_total_compute_stft, t_total_input, t_total_write_spec;
+
     gettimeofday(&t_start, NULL);
 
     /* Cargamos el archivo con la lista de audios */
@@ -63,7 +65,9 @@ int main (int argc, char* argv[]) {
     }
     
     n_samples = wav_file.n_samples;
-    
+
+    gettimeofday(&t_start_compute_stft, NULL);
+
     /* Alocar memoria */
     samples = malloc(n_samples * sizeof(float));
 
@@ -87,12 +91,16 @@ int main (int argc, char* argv[]) {
         return -1;
     }
 
+    gettimeofday(&t_end_compute_stft, NULL);
+
+    t_total_compute_stft = (t_end_compute_stft.tv_sec - t_start_compute_stft.tv_sec) + (t_end_compute_stft.tv_usec - t_start_compute_stft.tv_usec) / 1e6;
+    printf("\nTiempo de computo del STFT: %f segundos\n", t_total_compute_stft);
 
     /* Generar CSV y análisis de BPM */
     FILE *f;
     AnalysisResults* analysis_results;
-    
-    printf("\nEspectrograma global recibido (%d ventanas x %d bins)\n", n_frames, n_bins);
+
+    printf("\nEspectrograma global terminado (%d ventanas x %d bins)\n", n_frames, n_bins);
 
     gettimeofday(&t_start_write_spec, NULL);
 
@@ -129,8 +137,13 @@ int main (int argc, char* argv[]) {
     wav_free(&wav_file);
     free(samples);
 
-    printf("\nTiempo total de ejecucion (sin escritura del espectrograma): %.2f segundos\n", (t_start.tv_sec - t_end_input.tv_sec) + (t_start.tv_usec - t_end_input.tv_usec) / 1e6 - ((t_start_write_spec.tv_sec - t_end_write_spec.tv_sec) + (t_start_write_spec.tv_usec - t_end_write_spec.tv_usec) / 1e6) - ((t_start_input.tv_sec - t_end_input.tv_sec) + (t_start_input.tv_usec - t_end_input.tv_usec) / 1e6));
+    t_total_input = (t_end_input.tv_sec - t_start_input.tv_sec) + (t_end_input.tv_usec - t_start_input.tv_usec) / 1e6;
+    t_total_write_spec = (t_end_write_spec.tv_sec - t_start_write_spec.tv_sec) + (t_end_write_spec.tv_usec - t_start_write_spec.tv_usec) / 1e6;
+    t_total = (t_end.tv_sec - t_start.tv_sec) + (t_end.tv_usec - t_start.tv_usec) / 1e6;
 
-    printf("\nTiempo total de ejecucion: %.2f segundos\n", (t_end.tv_sec - t_start.tv_sec) + (t_end.tv_usec - t_start.tv_usec) / 1e6);   
+    printf("\nTiempo total de ejecucion (sin escritura del espectrograma): %f segundos\n", t_total - (t_total_write_spec + t_total_input));
+
+    printf("\nTiempo total de ejecucion: %f segundos\n", t_total);
+    
     return 0;
 }
