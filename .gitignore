@@ -20,12 +20,8 @@ test_fft
 *.app
 
 # Results and output files
-results/*.csv
-results/*.txt
-
-# Audio files (opcional - descomenta si no quieres subir archivos grandes)
-# data/*.wav
-# data/*.mp3
+results/*
+data/*
 
 # Core dumps and debug files
 core

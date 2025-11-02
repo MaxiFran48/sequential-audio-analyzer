@@ -6,6 +6,8 @@
 #include "stft.h"
 #include "bpm.h"
 #include "sys/time.h"
+#include <sys/stat.h>
+#include <sys/types.h>
 
 
 int main (int argc, char* argv[]) {
@@ -59,6 +61,23 @@ int main (int argc, char* argv[]) {
 
     char* audio_path = files[audio_index-1];
 
+
+    /* Creamos la ruta para los resultados de esta cancion en particular */
+    char aux_path[256];
+
+    /* Copiamos la ruta del audio en la ruta auxiliar */
+    strncpy(aux_path, audio_path + 5, 255); /* Copiamos sin el comienzo con "data/" */   
+
+    aux_path[255] = '\0'; /* Aseguramos que la cadena esté terminada en null */
+    aux_path[strlen(aux_path) - 4] = '\0'; /* Remover .wav */
+
+    /* Colocamos el nombre del archivo, sin la extension, en la ruta de resultados */
+    char* results_path = malloc(256 * sizeof(char));
+    sprintf(results_path, "results/%s", aux_path);
+
+    /* Creamos el directorio (ignoramos si ya existe) */
+    mkdir(results_path, 0755);
+
     if (wav_read(audio_path, &wav_file) == -1){
         printf("Error en la lectura del archivo de audio");
         return -1;
@@ -96,15 +115,16 @@ int main (int argc, char* argv[]) {
     t_total_compute_stft = (t_end_compute_stft.tv_sec - t_start_compute_stft.tv_sec) + (t_end_compute_stft.tv_usec - t_start_compute_stft.tv_usec) / 1e6;
     printf("\nTiempo de computo del STFT: %f segundos\n", t_total_compute_stft);
 
-    /* Generar CSV y análisis de BPM */
-    FILE *f;
-    AnalysisResults* analysis_results;
-
     printf("\nEspectrograma global terminado (%d ventanas x %d bins)\n", n_frames, n_bins);
 
     gettimeofday(&t_start_write_spec, NULL);
 
-    f = fopen("results/spectrogram.csv", "w");
+    /* Guardar el espectrograma en un archivo CSV */
+    char* spectrogram_path = malloc(256 * sizeof(char));
+    sprintf(spectrogram_path, "%s/spectrogram.csv", results_path);
+
+
+    FILE *f = fopen(spectrogram_path, "w");
     if (!f) {
         perror("No se pudo crear el archivo CSV");
         return -1;
@@ -123,11 +143,16 @@ int main (int argc, char* argv[]) {
 
     gettimeofday(&t_end_write_spec, NULL);
 
-    printf("\nArchivo CSV guardado en results/spectrogram.csv\n");
+    printf("\nArchivo CSV guardado en %s\n", spectrogram_path);
     
-    /* Calcular BPM y características */
+    /* Generar CSV y análisis de BPM */
+    AnalysisResults* analysis_results;
+
+    char* analysis_results_path = malloc(256 * sizeof(char));
+    sprintf(analysis_results_path, "%s/analysis_results.csv", results_path);
+
     analysis_results = analyze_features_and_bpm(mag, n_frames, n_bins, wav_file.samplerate);
-    write_results_to_csv("results/analysis_results.csv", analysis_results, wav_file.samplerate);
+    write_results_to_csv(analysis_results_path, analysis_results, wav_file.samplerate);
 
     gettimeofday(&t_end, NULL);
 
@@ -136,6 +161,9 @@ int main (int argc, char* argv[]) {
     free(mag);
     wav_free(&wav_file);
     free(samples);
+    free(results_path);
+    free(spectrogram_path);
+    free(analysis_results_path);
 
     t_total_input = (t_end_input.tv_sec - t_start_input.tv_sec) + (t_end_input.tv_usec - t_start_input.tv_usec) / 1e6;
     t_total_write_spec = (t_end_write_spec.tv_sec - t_start_write_spec.tv_sec) + (t_end_write_spec.tv_usec - t_start_write_spec.tv_usec) / 1e6;
