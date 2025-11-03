@@ -156,7 +156,7 @@ int main (int argc, char* argv[]) {
 
     gettimeofday(&t_end, NULL);
 
-    printf("\nBPM de la cancion: %.2f\n", analysis_results->bpm);
+    printf("\nBPM de la cancion: %.2f\n", analysis_results->bpm_estimado);
 
     /* Liberar memoria */
     free(analysis_results);
